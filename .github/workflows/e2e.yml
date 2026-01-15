@@ -1,0 +1,45 @@
+name: E2E Process Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    # Run daily at midnight UTC
+    - cron: '0 0 * * *'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      
+      - name: Install check-my-toolkit
+        run: npm install -g check-my-toolkit
+      
+      - name: Verify cm installation
+        run: cm --version
+      
+      - name: Setup GitHub CLI
+        run: |
+          gh auth status
+        env:
+          GH_TOKEN: ${{ secrets.E2E_TEST_TOKEN }}
+      
+      - name: Run Repo Checks Tests
+        run: ./tests/test-repo-checks.sh
+        env:
+          GH_TOKEN: ${{ secrets.E2E_TEST_TOKEN }}
+      
+      - name: Run PR Checks Tests
+        run: ./tests/test-pr-checks.sh
+        env:
+          GH_TOKEN: ${{ secrets.E2E_TEST_TOKEN }}
