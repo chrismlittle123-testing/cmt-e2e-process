@@ -12,12 +12,12 @@ FAIL_COUNT=0
 
 pass() {
   echo -e "${GREEN}✓ PASS${NC}: $1"
-  ((PASS_COUNT++))
+  ((PASS_COUNT++)) || true
 }
 
 fail() {
   echo -e "${RED}✗ FAIL${NC}: $1"
-  ((FAIL_COUNT++))
+  ((FAIL_COUNT++)) || true
 }
 
 info() {
@@ -35,7 +35,7 @@ trap "rm -rf $WORK_DIR" EXIT
 # Test 1: Branch protection enabled (cmt-protected)
 info "Test 1: Branch protection enabled on cmt-protected"
 cd "$WORK_DIR"
-gh repo clone chrismlittle123-testing/cmt-protected test-protected --quiet
+gh repo clone chrismlittle123-testing/cmt-protected test-protected -- --quiet
 cd test-protected
 
 if cm process check 2>&1 | grep -q "passed\|✓"; then
@@ -47,7 +47,7 @@ fi
 # Test 2: Branch protection disabled (cmt-unprotected)  
 info "Test 2: Branch protection disabled on cmt-unprotected"
 cd "$WORK_DIR"
-gh repo clone chrismlittle123-testing/cmt-unprotected test-unprotected --quiet
+gh repo clone chrismlittle123-testing/cmt-unprotected test-unprotected -- --quiet
 cd test-unprotected
 
 if cm process check 2>&1 | grep -qE "failed|violation|✗|No branch protection"; then
@@ -59,7 +59,7 @@ fi
 # Test 3: CODEOWNERS exists (cmt-codeowners)
 info "Test 3: CODEOWNERS file exists on cmt-codeowners"
 cd "$WORK_DIR"
-gh repo clone chrismlittle123-testing/cmt-codeowners test-codeowners --quiet
+gh repo clone chrismlittle123-testing/cmt-codeowners test-codeowners -- --quiet
 cd test-codeowners
 
 if cm process check 2>&1 | grep -q "passed\|✓"; then
@@ -72,10 +72,10 @@ fi
 info "Test 4: CODEOWNERS missing on cmt-unprotected"
 cd "$WORK_DIR/test-unprotected"
 
-# Add codeowners requirement to check.toml
-cat >> check.toml << 'EOF'
+# Add codeowners requirement to [process.repo] section (not at end of file)
+sed -i.bak '/require_branch_protection = true/a\
 require_codeowners = true
-EOF
+' check.toml
 
 if cm process check 2>&1 | grep -qE "failed|violation|✗|CODEOWNERS"; then
   pass "cmt-unprotected - CODEOWNERS check correctly failed"

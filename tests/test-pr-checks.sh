@@ -13,12 +13,12 @@ BRANCH_PREFIX="e2e-test-$(date +%s)"
 
 pass() {
   echo -e "${GREEN}✓ PASS${NC}: $1"
-  ((PASS_COUNT++))
+  ((PASS_COUNT++)) || true
 }
 
 fail() {
   echo -e "${RED}✗ FAIL${NC}: $1"
-  ((FAIL_COUNT++))
+  ((FAIL_COUNT++)) || true
 }
 
 info() {
@@ -54,7 +54,7 @@ info "Test 1: Creating small PR in cmt-pr-small (should PASS)"
 TEST_BRANCH="${BRANCH_PREFIX}-small"
 
 cd "$WORK_DIR"
-gh repo clone chrismlittle123-testing/cmt-pr-small test-small --quiet
+gh repo clone chrismlittle123-testing/cmt-pr-small test-small -- --quiet
 cd test-small
 git checkout -b "$TEST_BRANCH"
 
@@ -86,7 +86,7 @@ while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
     fail "cmt-pr-small PR check failed unexpectedly"
     break
   fi
-  ((ATTEMPTS++))
+  ((ATTEMPTS++)) || true
   sleep 5
 done
 
@@ -107,7 +107,7 @@ info "Test 2: Creating large PR in cmt-pr-large (should FAIL - too many files)"
 TEST_BRANCH="${BRANCH_PREFIX}-large-files"
 
 cd "$WORK_DIR"
-gh repo clone chrismlittle123-testing/cmt-pr-large test-large-files --quiet
+gh repo clone chrismlittle123-testing/cmt-pr-large test-large-files -- --quiet
 cd test-large-files
 git checkout -b "$TEST_BRANCH"
 
@@ -136,7 +136,7 @@ while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
     fail "cmt-pr-large should have failed but passed"
     break
   fi
-  ((ATTEMPTS++))
+  ((ATTEMPTS++)) || true
   sleep 5
 done
 
@@ -151,7 +151,7 @@ info "Test 3: Creating PR with many lines in cmt-pr-large (should FAIL - too man
 TEST_BRANCH="${BRANCH_PREFIX}-large-lines"
 
 cd "$WORK_DIR"
-gh repo clone chrismlittle123-testing/cmt-pr-large test-large-lines --quiet
+gh repo clone chrismlittle123-testing/cmt-pr-large test-large-lines -- --quiet
 cd test-large-lines
 git checkout -b "$TEST_BRANCH"
 
@@ -180,7 +180,7 @@ while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
     fail "cmt-pr-large should have failed but passed"
     break
   fi
-  ((ATTEMPTS++))
+  ((ATTEMPTS++)) || true
   sleep 5
 done
 
