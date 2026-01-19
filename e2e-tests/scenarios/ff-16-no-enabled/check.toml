@@ -1,0 +1,2 @@
+[process.forbidden_files]
+files = [".env"]

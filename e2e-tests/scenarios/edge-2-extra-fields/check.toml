@@ -1,0 +1,4 @@
+[process.forbidden_files]
+enabled = true
+files = [".env"]
+unknown_field = "test"

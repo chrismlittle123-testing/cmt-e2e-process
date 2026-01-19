@@ -1,0 +1,129 @@
+Test Results - Mon 19 Jan 2026 20:45:08 GMT
+===================
+Passed: 22
+Failed: 19
+
+Bugs Found:
+- tier-2: prod tier + internal ruleset: Exit code 0, expected 2 - ✗ Tier validation failed
+  Tier: production (source: repo-metadata.yaml)
+  Expected pattern: *-production
+  Rulesets: [base-internal, typescript]
+  Error: No ruleset matching pattern '*-production' found. Rulesets: [base-internal, typescript]
+- tier-11: no check.toml: Exit code 0, expected 2 - ✗ Tier validation failed
+  Tier: internal (source: default)
+  Expected pattern: *-internal
+  Rulesets: []
+  Error: No check.toml found
+- tier-14: case sensitivity: Exit code 0, expected 2 - ✗ Tier validation failed
+  Tier: production (source: repo-metadata.yaml)
+  Expected pattern: *-production
+  Rulesets: [base-Production]
+  Error: No ruleset matching pattern '*-production' found. Rulesets: [base-Production]
+- ff-1: detect .env file: Exit code 0, expected 1 - check-my-toolkit v1.4.0
+Config: /Users/christopherlittle/Documents/GitHub/personal/cmt-e2e-process/e2e-tests/scenarios/ff-1-basic-env/check.toml
+
+○ PROCESS
+
+──────────────────────────────────────────────────
+✓ All checks passed
+- ff-3: glob pattern matching: Exit code 0, expected 1 - check-my-toolkit v1.4.0
+Config: /Users/christopherlittle/Documents/GitHub/personal/cmt-e2e-process/e2e-tests/scenarios/ff-3-glob-pattern/check.toml
+
+○ PROCESS
+
+──────────────────────────────────────────────────
+✓ All checks passed
+- ff-4: custom error message: Exit code 0, expected 1 - check-my-toolkit v1.4.0
+Config: /Users/christopherlittle/Documents/GitHub/personal/cmt-e2e-process/e2e-tests/scenarios/ff-4-custom-message/check.toml
+
+○ PROCESS
+
+──────────────────────────────────────────────────
+✓ All checks passed
+- ff-7: multiple patterns: Exit code 0, expected 1 - check-my-toolkit v1.4.0
+Config: /Users/christopherlittle/Documents/GitHub/personal/cmt-e2e-process/e2e-tests/scenarios/ff-7-multi-patterns/check.toml
+
+○ PROCESS
+
+──────────────────────────────────────────────────
+✓ All checks passed
+- ff-8: hidden directory files: Exit code 0, expected 1 - check-my-toolkit v1.4.0
+Config: /Users/christopherlittle/Documents/GitHub/personal/cmt-e2e-process/e2e-tests/scenarios/ff-8-hidden-dirs/check.toml
+
+○ PROCESS
+
+──────────────────────────────────────────────────
+✓ All checks passed
+- ff-9: deeply nested files: Exit code 0, expected 1 - check-my-toolkit v1.4.0
+Config: /Users/christopherlittle/Documents/GitHub/personal/cmt-e2e-process/e2e-tests/scenarios/ff-9-deep-nested/check.toml
+
+○ PROCESS
+
+──────────────────────────────────────────────────
+✓ All checks passed
+- ff-10: json output format: Exit code 0, expected 1 - {
+  "version": "1.4.0",
+  "configPath": "/Users/christopherlittle/Documents/GitHub/personal/cmt-e2e-process/e2e-tests/scenarios/ff-10-json-format/check.toml",
+  "domains": {
+    "process": {
+      "domain": "process",
+      "status": "skip",
+      "checks": [],
+      "violationCount": 0
+    }
+  },
+  "summary": {
+    "totalViolations": 0,
+    "exitCode": 0
+  }
+}
+- ff-11: special chars in pattern: Exit code 0, expected 1 - check-my-toolkit v1.4.0
+Config: /Users/christopherlittle/Documents/GitHub/personal/cmt-e2e-process/e2e-tests/scenarios/ff-11-special-chars/check.toml
+
+○ PROCESS
+
+──────────────────────────────────────────────────
+✓ All checks passed
+- ff-13: symlink detection: Exit code 0, expected 1 - check-my-toolkit v1.4.0
+Config: /Users/christopherlittle/Documents/GitHub/personal/cmt-e2e-process/e2e-tests/scenarios/ff-13-symlink/check.toml
+
+○ PROCESS
+
+──────────────────────────────────────────────────
+✓ All checks passed
+- ff-14: unicode filename: Exit code 0, expected 1 - check-my-toolkit v1.4.0
+Config: /Users/christopherlittle/Documents/GitHub/personal/cmt-e2e-process/e2e-tests/scenarios/ff-14-unicode/check.toml
+
+○ PROCESS
+
+──────────────────────────────────────────────────
+✓ All checks passed
+- ff-15: long path: Exit code 0, expected 1 - check-my-toolkit v1.4.0
+Config: /Users/christopherlittle/Documents/GitHub/personal/cmt-e2e-process/e2e-tests/scenarios/ff-15-long-path/check.toml
+
+○ PROCESS
+
+──────────────────────────────────────────────────
+✓ All checks passed
+- ff-17: combined checks: Exit code 0, expected 1 - check-my-toolkit v1.4.0
+Config: /Users/christopherlittle/Documents/GitHub/personal/cmt-e2e-process/e2e-tests/scenarios/ff-17-combined/check.toml
+
+✓ PROCESS
+  ✓ Hooks: passed (1ms)
+
+──────────────────────────────────────────────────
+✓ All checks passed
+- ff-18: recursive extension: Exit code 0, expected 1 - check-my-toolkit v1.4.0
+Config: /Users/christopherlittle/Documents/GitHub/personal/cmt-e2e-process/e2e-tests/scenarios/ff-18-recursive-ext/check.toml
+
+○ PROCESS
+
+──────────────────────────────────────────────────
+✓ All checks passed
+- edge-1: invalid TOML: Exit code 0, expected 2 - Config error: Failed to parse check.toml: Unexpected character, expected whitespace, . or ] at row 1, col 26, pos 25:
+1> [process.forbidden_files
+                            ^
+2: enabled = true
+- edge-2: extra config fields: Exit code 0, expected 2 - Config error: Invalid check.toml configuration:
+  - process.forbidden_files: Unrecognized key(s) in object: 'unknown_field'
+- edge-3: custom config path: Output mismatch - Expected 'passed'

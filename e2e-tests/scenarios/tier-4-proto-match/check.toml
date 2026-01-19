@@ -1,0 +1,3 @@
+[extends]
+registry = "github:example/standards"
+rulesets = ["base-prototype"]

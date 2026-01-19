@@ -1,0 +1,7 @@
+[process.hooks]
+enabled = true
+require_husky = true
+
+[process.forbidden_files]
+enabled = true
+files = [".env"]
