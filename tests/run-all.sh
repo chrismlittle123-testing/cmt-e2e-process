@@ -4,7 +4,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "╔════════════════════════════════════════════════════════════╗"
-echo "║  check-my-toolkit Process E2E Tests                        ║"
+echo "║  check-my-toolkit E2E Tests                                ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo ""
 
@@ -29,8 +29,11 @@ fi
 echo "Prerequisites OK"
 echo ""
 
-TOTAL_PASS=0
 TOTAL_FAIL=0
+
+# =============================================================================
+# PROCESS DOMAIN TESTS
+# =============================================================================
 
 # Run repo checks
 echo "────────────────────────────────────────"
@@ -45,7 +48,7 @@ fi
 
 echo ""
 
-# Run PR checks  
+# Run PR checks
 echo "────────────────────────────────────────"
 echo "Running PR Checks Tests..."
 echo "────────────────────────────────────────"
@@ -54,6 +57,62 @@ if "$SCRIPT_DIR/test-pr-checks.sh"; then
 else
   PR_FAIL=$?
   ((TOTAL_FAIL += PR_FAIL)) || true
+fi
+
+echo ""
+
+# Run branch/commit checks
+echo "────────────────────────────────────────"
+echo "Running Branch/Commit Checks Tests..."
+echo "────────────────────────────────────────"
+if "$SCRIPT_DIR/test-branch-commit-checks.sh"; then
+  echo ""
+else
+  BC_FAIL=$?
+  ((TOTAL_FAIL += BC_FAIL)) || true
+fi
+
+echo ""
+
+# Run CI workflow checks
+echo "────────────────────────────────────────"
+echo "Running CI Workflow Checks Tests..."
+echo "────────────────────────────────────────"
+if "$SCRIPT_DIR/test-ci-checks.sh"; then
+  echo ""
+else
+  CI_FAIL=$?
+  ((TOTAL_FAIL += CI_FAIL)) || true
+fi
+
+echo ""
+
+# Run CODEOWNERS rules checks
+echo "────────────────────────────────────────"
+echo "Running CODEOWNERS Rules Tests..."
+echo "────────────────────────────────────────"
+if "$SCRIPT_DIR/test-codeowners-rules.sh"; then
+  echo ""
+else
+  CO_FAIL=$?
+  ((TOTAL_FAIL += CO_FAIL)) || true
+fi
+
+echo ""
+
+# =============================================================================
+# CODE DOMAIN TESTS
+# =============================================================================
+
+# Run code checks (requires npm install, takes longer)
+echo "────────────────────────────────────────"
+echo "Running CODE Domain Tests..."
+echo "────────────────────────────────────────"
+if "$SCRIPT_DIR/test-code-checks.sh"; then
+  echo ""
+else
+  CODE_FAIL=$?
+  ((TOTAL_FAIL += CODE_FAIL)) || true
 fi
 
 echo ""
