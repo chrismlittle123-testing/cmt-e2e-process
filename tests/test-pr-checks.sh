@@ -28,17 +28,17 @@ info() {
 cleanup_pr() {
   local repo=$1
   local branch=$2
-  
+
   info "Cleaning up PR and branch in $repo..."
-  
-  # Close any open PRs for this branch
+
+  # Close any open PRs for this branch (--delete-branch removes the remote branch)
   PR_NUM=$(gh pr list --repo "chrismlittle123-testing/$repo" --head "$branch" --json number -q '.[0].number' 2>/dev/null || echo "")
   if [ -n "$PR_NUM" ]; then
     gh pr close "$PR_NUM" --repo "chrismlittle123-testing/$repo" --delete-branch 2>/dev/null || true
+  else
+    # No PR found, delete branch directly
+    gh api "repos/chrismlittle123-testing/$repo/git/refs/heads/$branch" --method DELETE 2>/dev/null || true
   fi
-  
-  # Delete remote branch if it still exists
-  gh api "repos/chrismlittle123-testing/$repo/git/refs/heads/$branch" --method DELETE 2>/dev/null || true
 }
 
 echo "========================================"
