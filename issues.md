@@ -155,29 +155,15 @@ The `[process.forbidden_files]` feature was completely non-functional because `m
 
 ---
 
-### Bug #2: Tier validation case sensitivity not documented (v1.3.0)
+### Bug #2: [REMOVED] Tier validation case sensitivity
 
-**Severity:** Medium
-
-**Version Affected:** 1.3.0 - 1.6.0
-
-**Status:** Still present, but less impactful with Bug #9 fix
-
-**Description:**
-Tier values in `repo-metadata.yaml` are case-sensitive. Using "Production" instead of "production" defaults to "internal" tier. With v1.5.5, a warning is now shown when an invalid tier is used, which helps users identify this issue.
+**Status:** REMOVED - Not a bug (expected behavior, warning message is sufficient)
 
 ---
 
-### Bug #3: Tier validation doesn't trim whitespace (v1.3.0)
+### Bug #3: [REMOVED] Tier validation doesn't trim whitespace
 
-**Severity:** Medium
-
-**Version Affected:** 1.3.0 - 1.6.0
-
-**Status:** Still present
-
-**Description:**
-Whitespace in tier values is not trimmed, causing unexpected failures.
+**Status:** REMOVED - Not a bug (users should provide correct values)
 
 ---
 
@@ -192,16 +178,9 @@ When using `--config` with a subdirectory path, tier validation looked for `repo
 
 ---
 
-### Bug #5: Ruleset matching is case-sensitive without warning (v1.3.0)
+### Bug #5: [REMOVED] Ruleset matching is case-sensitive
 
-**Severity:** Medium
-
-**Version Affected:** 1.3.0 - 1.6.0
-
-**Status:** Still present
-
-**Description:**
-Ruleset suffix matching is case-sensitive. A ruleset named "base-Production" won't match tier "production".
+**Status:** REMOVED - Not a bug (ruleset naming is user's choice)
 
 ---
 
@@ -405,69 +384,15 @@ The `exclude` option for `[process.pr]` causes a config validation error, even t
 
 ## New Bugs Found in Branch Protection & Rulesets Testing (v1.6.0)
 
-### Bug #20: required_reviews > 6 not validated (v1.6.0)
+### Bug #20: [REMOVED] required_reviews > 6 not validated
 
-**Severity:** Medium
-
-**Version Affected:** 1.6.0
-
-**Description:**
-The `required_reviews` setting in `[process.repo.branch_protection]` accepts values greater than 6, but GitHub's API has a maximum of 6 required reviewers. Invalid values pass config validation and will fail at runtime when trying to apply to GitHub.
-
-**Steps to Reproduce:**
-1. Create a `check.toml`:
-   ```toml
-   [process.repo]
-   enabled = true
-   require_branch_protection = true
-
-   [process.repo.branch_protection]
-   branch = "main"
-   required_reviews = 10
-   ```
-2. Run `cm validate config`
-
-**Expected Result:**
-- Validation should fail with error: "required_reviews must be between 0 and 6"
-
-**Actual Result:**
-```
-✓ Valid: check.toml
-```
-
-**Impact:** Users won't discover the invalid value until they try to sync to GitHub, where the API will reject it.
+**Status:** REMOVED - `[process.repo.branch_protection]` is deprecated in v1.7.0, replaced by `[process.repo.ruleset]`
 
 ---
 
-### Bug #21: Empty branch name not validated (v1.6.0)
+### Bug #21: [REMOVED] Empty branch name not validated
 
-**Severity:** Medium
-
-**Version Affected:** 1.6.0
-
-**Description:**
-An empty string for `branch` in `[process.repo.branch_protection]` passes config validation but would fail at runtime.
-
-**Steps to Reproduce:**
-1. Create a `check.toml`:
-   ```toml
-   [process.repo]
-   enabled = true
-   require_branch_protection = true
-
-   [process.repo.branch_protection]
-   branch = ""
-   required_reviews = 1
-   ```
-2. Run `cm validate config`
-
-**Expected Result:**
-- Validation should fail with error: "branch cannot be empty"
-
-**Actual Result:**
-```
-✓ Valid: check.toml
-```
+**Status:** REMOVED - `[process.repo.branch_protection]` is deprecated in v1.7.0, replaced by `[process.repo.ruleset]`
 
 ---
 
@@ -526,36 +451,9 @@ When running `cm process diff` in a directory that is not a git repo but is nest
 
 ---
 
-### Bug #24: CODEOWNERS check skipped when no GitHub remote (v1.6.0)
+### Bug #24: [REMOVED] CODEOWNERS check skipped when no GitHub remote
 
-**Severity:** Medium
-
-**Version Affected:** 1.6.0
-
-**Description:**
-When `require_codeowners = true` is set but the repository has no GitHub remote configured, the entire repo check is skipped instead of checking for the local CODEOWNERS file.
-
-**Steps to Reproduce:**
-1. Create a local git repo without a GitHub remote
-2. Create a `check.toml`:
-   ```toml
-   [process.repo]
-   enabled = true
-   require_codeowners = true
-   ```
-3. Do NOT create a CODEOWNERS file
-4. Run `cm process check`
-
-**Expected Result:**
-- Check should fail: "CODEOWNERS file required but not found"
-
-**Actual Result:**
-```
-✓ Repository: skipped - Could not determine GitHub repository from git remote
-✓ All checks passed
-```
-
-**Impact:** Teams working in repos without remotes (or with non-GitHub remotes) cannot use the CODEOWNERS check.
+**Status:** REMOVED - Not a bug (repo checks require GitHub remote by design)
 
 ---
 
@@ -660,10 +558,10 @@ CODEOWNERS files with invalid syntax (e.g., missing @ prefix on usernames) are a
 | Bug # | Severity | Status | Feature | Description |
 |-------|----------|--------|---------|-------------|
 | 1 | Critical | FIXED (v1.5.4) | forbidden_files | Config not merged |
-| 2 | Medium | Open | validate tier | Case-sensitive tier values |
-| 3 | Medium | Open | validate tier | Whitespace not trimmed |
+| 2 | - | REMOVED | validate tier | Not a bug (case sensitivity expected) |
+| 3 | - | REMOVED | validate tier | Not a bug (whitespace is user error) |
 | 4 | Medium | FIXED (v1.5.5) | validate tier | Custom config path issue |
-| 5 | Medium | Open | validate tier | Case-sensitive ruleset matching |
+| 5 | - | REMOVED | validate tier | Not a bug (ruleset naming is user's choice) |
 | 6 | Low | FIXED (v1.5.5) | validate tier | Invalid YAML silently defaults |
 | 7 | Low | FIXED (v1.5.5) | validate tier | Empty vs missing not distinguished |
 | 8 | Low | FIXED (v1.5.5) | validate tier | Empty rulesets not warned |
@@ -675,26 +573,26 @@ CODEOWNERS files with invalid syntax (e.g., missing @ prefix on usernames) are a
 | 14 | Medium | Open | forbidden_files | Custom ignore dirs not working |
 | 15 | Low | Open | forbidden_files | Empty ignore doesn't override defaults |
 | 16 | Low | Open | forbidden_files | Invalid glob patterns not validated |
-| 17 | Medium | Open | process.tickets | Ticket in commit body not detected |
+| 17 | Medium | Open | process.tickets | Ticket in body not found with ^ anchor |
 | 18 | High | Open | process.coverage | min_threshold from check.toml ignored |
 | 19 | Low | Open | process.pr | exclude option not supported |
-| 20 | Medium | NEW | branch_protection | required_reviews > 6 not validated |
-| 21 | Medium | NEW | branch_protection | Empty branch name not validated |
-| 22 | Low | NEW | tag_protection | Empty patterns array not validated |
-| 23 | Low | NEW | sync/diff | Inherits parent git context |
-| 24 | Medium | NEW | repo check | CODEOWNERS skipped when no remote |
-| 25 | Low | NEW | CODEOWNERS | Empty file not validated |
-| 26 | Low | NEW | branch_protection | Newlines in status checks allowed |
-| 27 | Low | NEW | CODEOWNERS | Invalid syntax not validated |
+| 20 | - | REMOVED | branch_protection | Deprecated in v1.7.0 |
+| 21 | - | REMOVED | branch_protection | Deprecated in v1.7.0 |
+| 22 | Low | Open | tag_protection | Empty patterns array not validated |
+| 23 | Low | Open | sync/diff | Inherits parent git context |
+| 24 | - | REMOVED | repo check | Not a bug (requires GitHub remote by design) |
+| 25 | Low | Open | CODEOWNERS | Empty file not validated |
+| 26 | Low | Open | branch_protection | Newlines in status checks allowed |
+| 27 | Low | Open | CODEOWNERS | Invalid syntax not validated |
 
 ### Totals
 
-**Total Bugs:** 27
+**Total Bugs:** 27 tracked (6 removed as not bugs/deprecated)
 - Fixed: 6
-- Open: 21
+- Open: 15
+- Removed: 6
 
-**By Severity:**
-- Critical: 0 open (1 fixed)
-- High: 1 open (0 fixed)
-- Medium: 9 open (1 fixed)
-- Low: 11 open (4 fixed)
+**By Severity (Open only):**
+- High: 1 (#18)
+- Medium: 2 (#14, #17)
+- Low: 12
