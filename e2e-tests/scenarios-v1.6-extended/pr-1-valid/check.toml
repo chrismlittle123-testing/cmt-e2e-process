@@ -1,0 +1,4 @@
+[process.pr]
+enabled = true
+max_files = 20
+max_lines = 500

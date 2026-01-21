@@ -295,6 +295,114 @@ Patterns containing special characters like `[`, `]`, `{`, `}` may not match fil
 
 ---
 
+## New Bugs Found in Extended v1.6.0 Testing
+
+### Bug #17: Ticket reference in commit body not detected (v1.6.0)
+
+**Severity:** Medium
+
+**Version Affected:** 1.6.0
+
+**Description:**
+When `require_in_commits = true` is set in `[process.tickets]`, the tool only looks for ticket references in the commit message subject line. Ticket references in the commit body are not detected.
+
+**Steps to Reproduce:**
+1. Create a `check.toml`:
+   ```toml
+   [process.tickets]
+   enabled = true
+   pattern = "^(PROJ|JIRA)-[0-9]+"
+   require_in_commits = true
+   ```
+2. Create a commit message file with ticket in body:
+   ```
+   Add new feature
+
+   This implements the feature described in PROJ-456.
+   ```
+3. Run `cm process check-commit COMMIT_MSG`
+
+**Expected Result:**
+- Ticket `PROJ-456` in the body should be detected
+- Check should pass
+
+**Actual Result:**
+```
+✗ Invalid commit message:
+  Missing ticket reference matching: ^(PROJ|JIRA)-[0-9]+
+```
+
+**Impact:** Users who follow conventional commits (ticket in body) will have false failures.
+
+---
+
+### Bug #18: Coverage min_threshold from check.toml ignored (v1.6.0)
+
+**Severity:** High
+
+**Version Affected:** 1.6.0
+
+**Description:**
+The `min_threshold` setting in `[process.coverage]` is completely ignored. The coverage check only works if you have a coverage threshold configured in vitest.config.ts, jest.config.js, or .nycrc. The check.toml setting is non-functional.
+
+**Steps to Reproduce:**
+1. Create a `check.toml`:
+   ```toml
+   [process.coverage]
+   enabled = true
+   min_threshold = 80
+   ```
+2. Create a coverage/lcov.info file with coverage data
+3. Run `cm process check`
+
+**Expected Result:**
+- Coverage should be read from lcov.info
+- Threshold should be compared against `min_threshold` (80)
+
+**Actual Result:**
+```
+✗ Coverage: 1 violation(s)
+    error  No coverage threshold config found (checked vitest, jest, nyc)
+```
+
+**Impact:** The `min_threshold` config option is non-functional. Users cannot enforce coverage thresholds without tool-specific config files.
+
+---
+
+### Bug #19: PR exclude option documented but not supported (v1.6.0)
+
+**Severity:** Low
+
+**Version Affected:** 1.6.0
+
+**Description:**
+The `exclude` option for `[process.pr]` causes a config validation error, even though excluding files from PR size limits is a reasonable feature expectation.
+
+**Steps to Reproduce:**
+1. Create a `check.toml`:
+   ```toml
+   [process.pr]
+   enabled = true
+   max_files = 10
+   max_lines = 200
+   exclude = ["*.lock", "*.generated.ts"]
+   ```
+2. Run `cm validate config`
+
+**Expected Result:**
+- Config should be valid
+- Lock files and generated files should be excluded from PR size calculation
+
+**Actual Result:**
+```
+✗ Invalid: Invalid check.toml configuration:
+  - process.pr: Unrecognized key(s) in object: 'exclude'
+```
+
+**Note:** This is a missing feature rather than a bug, but the expectation is reasonable based on similar exclude options in other checks.
+
+---
+
 ## Summary
 
 ### All Bugs by Status
@@ -314,17 +422,21 @@ Patterns containing special characters like `[`, `]`, `{`, `}` may not match fil
 | 11 | Low | Open | forbidden_files | Special glob chars may fail |
 | 12 | Low | Open | validate tier | JSON output missing diagnostics |
 | 13 | Low | Open | validate tier | Invalid tier passes without extends |
-| 14 | Medium | NEW | forbidden_files | Custom ignore dirs not working |
-| 15 | Low | NEW | forbidden_files | Empty ignore doesn't override defaults |
-| 16 | Low | NEW | forbidden_files | Invalid glob patterns not validated |
+| 14 | Medium | Open | forbidden_files | Custom ignore dirs not working |
+| 15 | Low | Open | forbidden_files | Empty ignore doesn't override defaults |
+| 16 | Low | Open | forbidden_files | Invalid glob patterns not validated |
+| 17 | Medium | NEW | process.tickets | Ticket in commit body not detected |
+| 18 | High | NEW | process.coverage | min_threshold from check.toml ignored |
+| 19 | Low | NEW | process.pr | exclude option not supported |
 
 ### Totals
 
-**Total Bugs:** 16
+**Total Bugs:** 19
 - Fixed: 6
-- Open: 10
+- Open: 13
 
 **By Severity:**
 - Critical: 0 open (1 fixed)
-- Medium: 4 open (1 fixed)
-- Low: 6 open (4 fixed)
+- High: 1 open (0 fixed)
+- Medium: 5 open (1 fixed)
+- Low: 7 open (4 fixed)

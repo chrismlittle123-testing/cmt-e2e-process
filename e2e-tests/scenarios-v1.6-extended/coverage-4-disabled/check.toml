@@ -1,0 +1,3 @@
+[process.coverage]
+enabled = false
+min_threshold = 80

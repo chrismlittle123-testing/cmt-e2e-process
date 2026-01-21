@@ -1,0 +1,4 @@
+[process.branches]
+enabled = true
+pattern = "^(feature|fix|hotfix)/[A-Z]+-[0-9]+/.+"
+exclude = ["main", "develop"]

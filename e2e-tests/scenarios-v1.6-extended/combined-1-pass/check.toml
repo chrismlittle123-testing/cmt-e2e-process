@@ -1,0 +1,8 @@
+[process.hooks]
+enabled = true
+require_husky = true
+require_hooks = ["pre-commit"]
+
+[process.ci]
+enabled = true
+require_workflows = ["ci.yml"]

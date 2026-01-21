@@ -1,0 +1,3 @@
+[process.coverage]
+enabled = true
+min_threshold = 0

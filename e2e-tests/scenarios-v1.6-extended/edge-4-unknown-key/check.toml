@@ -1,0 +1,3 @@
+[process.hooks]
+enabled = true
+unknown_option = "value"

@@ -1,0 +1,4 @@
+[process.branches]
+enabled = true
+pattern = "^(feature|fix)/.+"
+exclude = []

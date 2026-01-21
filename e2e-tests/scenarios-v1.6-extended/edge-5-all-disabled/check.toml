@@ -1,0 +1,8 @@
+[process.hooks]
+enabled = false
+
+[process.ci]
+enabled = false
+
+[code.quality.disable-comments]
+enabled = false

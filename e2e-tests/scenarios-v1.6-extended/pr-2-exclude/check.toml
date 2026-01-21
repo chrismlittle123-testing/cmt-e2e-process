@@ -1,0 +1,5 @@
+[process.pr]
+enabled = true
+max_files = 10
+max_lines = 200
+exclude = ["*.lock", "*.generated.ts"]

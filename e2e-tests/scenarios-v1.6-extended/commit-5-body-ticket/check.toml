@@ -1,0 +1,4 @@
+[process.tickets]
+enabled = true
+pattern = "^(PROJ|JIRA)-[0-9]+"
+require_in_commits = true

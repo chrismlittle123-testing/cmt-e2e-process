@@ -1,0 +1,7 @@
+[infra.tagging]
+enabled = true
+region = "us-east-1"
+required = ["Environment", "Owner", "CostCenter"]
+
+[infra.tagging.values]
+Environment = ["dev", "staging", "prod"]

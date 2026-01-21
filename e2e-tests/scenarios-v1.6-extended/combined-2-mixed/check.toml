@@ -1,0 +1,7 @@
+[process.hooks]
+enabled = true
+require_husky = true
+require_hooks = ["pre-commit"]
+
+[code.quality.disable-comments]
+enabled = true

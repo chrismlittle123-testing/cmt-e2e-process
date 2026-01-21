@@ -1,0 +1,4 @@
+[process.branches]
+enabled = true
+pattern = "^(feature|fix)/v[0-9]+\\.[0-9]+\\.[0-9]+/.+"
+exclude = ["main"]

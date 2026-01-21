@@ -1,0 +1,5 @@
+[process.hooks]
+enabled = false
+
+[process.ci]
+enabled = false
