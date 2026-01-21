@@ -1,107 +1,170 @@
-# Bugs Found in check-my-toolkit v1.3.0 - v1.4.0
+# Bugs Found in check-my-toolkit v1.3.0 - v1.6.0
 
-This document lists bugs discovered during E2E testing of the new features introduced in check-my-toolkit versions 1.3.0 through 1.4.0.
+This document lists bugs discovered during E2E testing of the new features introduced in check-my-toolkit versions 1.3.0 through 1.6.0.
 
 **Testing Environment:**
-- check-my-toolkit version: 1.4.0
+- check-my-toolkit version: 1.6.0
 - Node.js version: 25.2.1
 - Platform: macOS (Darwin 25.2.0)
 
 ---
 
-## Critical Bugs
+## Bug Status Summary
 
-### Bug #1: [CRITICAL] forbidden_files configuration not merged - feature completely broken (v1.4.0)
+### Fixed Bugs (verified in v1.5.x - v1.6.0)
 
-**Severity:** Critical
+| Bug # | Fixed In | Feature | Description |
+|-------|----------|---------|-------------|
+| 1 | v1.5.4 | forbidden_files | Config merge fix - feature now works |
+| 4 | v1.5.5 | validate tier | Git root metadata lookup now correct |
+| 6 | v1.5.5 | validate tier | YAML parse errors now show warning |
+| 7 | v1.5.5 | validate tier | Empty vs missing metadata now distinguished |
+| 8 | v1.5.5 | validate tier | Empty rulesets now show warning |
+| 9 | v1.5.5 | validate tier | Invalid tier now shows valid values |
 
-**Version Affected:** 1.4.0
+### New Features Working Correctly (v1.5.0 - v1.6.0)
 
-**Description:**
-The `[process.forbidden_files]` feature introduced in v1.4.0 is completely non-functional. The configuration is parsed and validated but never passed to the runner because the `mergeProcess()` function in `config/loader.js` does not include `forbidden_files` in its merge logic.
-
-**Root Cause:**
-In `dist/config/loader.js` lines 278-292, the `mergeProcess()` function explicitly merges all process config sections (hooks, ci, branches, commits, changesets, pr, tickets, coverage, repo, backups, codeowners, docs) but omits `forbidden_files`. This causes the `forbidden_files` configuration to be dropped when merging with defaults.
-
-**Steps to Reproduce:**
-1. Create a `check.toml` with:
-   ```toml
-   [process.forbidden_files]
-   enabled = true
-   files = [".env"]
-   ```
-2. Create a `.env` file in the same directory
-3. Run `cm process check --format json`
-
-**Expected Result:**
-- Check should detect the forbidden `.env` file
-- Exit code should be 1
-- Output should show violation for forbidden file
-
-**Actual Result:**
-- Process domain shows `"status": "skip"` and `"checks": []`
-- Exit code is 0
-- No violations reported
-- `.env` file is not detected
-
-**Evidence:**
-```json
-{
-  "domains": {
-    "process": {
-      "domain": "process",
-      "status": "skip",
-      "checks": [],
-      "violationCount": 0
-    }
-  }
-}
-```
-
-**Impact:** The entire forbidden_files feature advertised in v1.4.0 does not work.
+| Version | Feature | Status |
+|---------|---------|--------|
+| v1.6.0 | CI Commands Enforcement | Working - all 10 tests passed |
+| v1.5.7 | CLI exit codes for invalid args | Working |
+| v1.5.6 | Duplicate extensions validation | Working |
+| v1.5.6 | Block comment detection | Working |
+| v1.5.5 | Tier validation improvements | Mostly working (see new bugs) |
+| v1.5.4 | Forbidden files merge | Working |
+| v1.5.0 | TypeScript naming conventions | Working |
 
 ---
 
-## Medium Severity Bugs
+## New Bugs Found in v1.5.0 - v1.6.0
+
+### Bug #14: Custom ignore directories not working (v1.5.7)
+
+**Severity:** Medium
+
+**Version Affected:** 1.5.7 - 1.6.0
+
+**Description:**
+The `ignore` option in `[process.forbidden_files]` does not work with custom directory patterns. Files in directories specified in the `ignore` array are still detected as violations.
+
+**Steps to Reproduce:**
+1. Create a `check.toml`:
+   ```toml
+   [process.forbidden_files]
+   enabled = true
+   files = ["**/.env"]
+   ignore = ["vendor/", "build/"]
+   ```
+2. Create forbidden files in ignored directories:
+   ```
+   vendor/.env
+   build/.env
+   ```
+3. Run `cm process check`
+
+**Expected Result:**
+- Files in `vendor/` and `build/` should be ignored
+- No violations should be reported
+
+**Actual Result:**
+```
+✗ Forbidden Files: 2 violation(s)
+    vendor/.env error  Forbidden file exists: vendor/.env (matched pattern: **/.env)
+    build/.env error  Forbidden file exists: build/.env (matched pattern: **/.env)
+```
+
+**Note:** Default ignores (`node_modules/`, `.git/`) work correctly. Only custom ignore patterns fail.
+
+---
+
+### Bug #15: Empty ignore array doesn't override defaults (v1.5.7)
+
+**Severity:** Low
+
+**Version Affected:** 1.5.7 - 1.6.0
+
+**Description:**
+Setting `ignore = []` in `[process.forbidden_files]` does not disable the default ignore patterns (node_modules/, .git/). There is no way to scan files in these directories.
+
+**Steps to Reproduce:**
+1. Create a `check.toml`:
+   ```toml
+   [process.forbidden_files]
+   enabled = true
+   files = ["**/.env"]
+   ignore = []
+   ```
+2. Create a forbidden file in node_modules:
+   ```
+   node_modules/.env
+   ```
+3. Run `cm process check`
+
+**Expected Result:**
+- With explicit empty `ignore = []`, defaults should be overridden
+- File in `node_modules/.env` should be detected
+
+**Actual Result:**
+- `node_modules/` is still ignored (default behavior)
+- No violation reported for `node_modules/.env`
+
+**Note:** This may be intentional behavior, but there's no documented way to scan node_modules if needed.
+
+---
+
+### Bug #16: Invalid glob patterns not validated (v1.5.5)
+
+**Severity:** Low
+
+**Version Affected:** 1.5.5 - 1.6.0
+
+**Description:**
+The changelog for v1.5.5 states "Glob pattern validation added for forbidden_files configuration", but invalid glob patterns are accepted without error.
+
+**Steps to Reproduce:**
+1. Create a `check.toml`:
+   ```toml
+   [process.forbidden_files]
+   enabled = true
+   files = ["[invalid"]  # Unclosed bracket - invalid glob syntax
+   ```
+2. Run `cm validate config`
+
+**Expected Result:**
+- Validation should fail with error about invalid glob pattern
+
+**Actual Result:**
+```
+✓ Valid: check.toml
+```
+
+**Impact:** Invalid patterns will fail silently at runtime instead of being caught during config validation.
+
+---
+
+## Previously Documented Bugs (v1.3.0 - v1.4.0)
+
+### Bug #1: [FIXED in v1.5.4] forbidden_files configuration not merged
+
+**Status:** FIXED
+
+**Description:**
+The `[process.forbidden_files]` feature was completely non-functional because `mergeProcess()` didn't include `forbidden_files` in its merge logic.
+
+**Fix:** v1.5.4 integrated `forbidden_files` into the merge process.
+
+---
 
 ### Bug #2: Tier validation case sensitivity not documented (v1.3.0)
 
 **Severity:** Medium
 
-**Version Affected:** 1.3.0
+**Version Affected:** 1.3.0 - 1.6.0
+
+**Status:** Still present, but less impactful with Bug #9 fix
 
 **Description:**
-Tier values in `repo-metadata.yaml` are case-sensitive but this is not documented or handled gracefully. Using "Production" instead of "production" silently falls back to "internal" tier.
-
-**Steps to Reproduce:**
-1. Create `repo-metadata.yaml`:
-   ```yaml
-   tier: Production
-   ```
-2. Create `check.toml` with production rulesets:
-   ```toml
-   [extends]
-   registry = "github:example/standards"
-   rulesets = ["base-production"]
-   ```
-3. Run `cm validate tier`
-
-**Expected Result:**
-- Either: Accept "Production" as equivalent to "production"
-- Or: Clear error message about invalid tier value
-
-**Actual Result:**
-- Silently defaults to "internal" tier
-- Validation fails because "base-production" doesn't match "*-internal"
-- User gets confusing error message
-
-**Evidence:**
-```
-✗ Tier validation failed
-  Tier: internal (source: default)  <-- Should say "Production is not a valid tier"
-  Expected pattern: *-internal
-  Rulesets: [base-production]
-```
+Tier values in `repo-metadata.yaml` are case-sensitive. Using "Production" instead of "production" defaults to "internal" tier. With v1.5.5, a warning is now shown when an invalid tier is used, which helps users identify this issue.
 
 ---
 
@@ -109,57 +172,23 @@ Tier values in `repo-metadata.yaml` are case-sensitive but this is not documente
 
 **Severity:** Medium
 
-**Version Affected:** 1.3.0
+**Version Affected:** 1.3.0 - 1.6.0
+
+**Status:** Still present
 
 **Description:**
-Whitespace in tier values (e.g., from YAML multiline strings) is not trimmed, causing unexpected failures.
-
-**Steps to Reproduce:**
-1. Create `repo-metadata.yaml`:
-   ```yaml
-   tier: " production "
-   ```
-2. Create `check.toml` with production rulesets
-3. Run `cm validate tier`
-
-**Expected Result:**
-- Tier value should be trimmed to "production"
-- Validation should pass
-
-**Actual Result:**
-- Tier " production " is not in VALID_TIERS
-- Silently defaults to "internal"
-- Validation fails
+Whitespace in tier values is not trimmed, causing unexpected failures.
 
 ---
 
-### Bug #4: Custom config path breaks tier metadata resolution (v1.3.0)
+### Bug #4: [FIXED in v1.5.5] Custom config path breaks tier metadata resolution
 
-**Severity:** Medium
-
-**Version Affected:** 1.3.0
+**Status:** FIXED
 
 **Description:**
-When using `--config` to specify a config file in a subdirectory, tier validation looks for `repo-metadata.yaml` relative to the config file location instead of the repository root.
+When using `--config` with a subdirectory path, tier validation looked for `repo-metadata.yaml` relative to config instead of git root.
 
-**Steps to Reproduce:**
-1. Create directory structure:
-   ```
-   project/
-   ├── repo-metadata.yaml  (tier: production)
-   └── config/
-       └── check.toml  (with production rulesets)
-   ```
-2. Run `cm validate tier --config config/check.toml`
-
-**Expected Result:**
-- Should find `repo-metadata.yaml` in the project root
-- Validation should pass
-
-**Actual Result:**
-- Looks for `repo-metadata.yaml` in `config/` directory
-- Defaults to "internal" tier
-- Validation fails
+**Fix:** v1.5.5 corrected repo-metadata.yaml lookup to use git root.
 
 ---
 
@@ -167,131 +196,56 @@ When using `--config` to specify a config file in a subdirectory, tier validatio
 
 **Severity:** Medium
 
-**Version Affected:** 1.3.0
+**Version Affected:** 1.3.0 - 1.6.0
+
+**Status:** Still present
 
 **Description:**
 Ruleset suffix matching is case-sensitive. A ruleset named "base-Production" won't match tier "production".
 
-**Steps to Reproduce:**
-1. Create `check.toml`:
-   ```toml
-   [extends]
-   registry = "github:example/standards"
-   rulesets = ["base-Production"]  # Note capital P
-   ```
-2. Create `repo-metadata.yaml`:
-   ```yaml
-   tier: production
-   ```
-3. Run `cm validate tier`
+---
 
-**Expected Result:**
-- Either: Case-insensitive matching
-- Or: Warning about case mismatch
+### Bug #6: [FIXED in v1.5.5] Invalid YAML silently defaults to internal
 
-**Actual Result:**
-- Validation fails without clear indication that case is the issue
+**Status:** FIXED
+
+**Description:**
+Invalid YAML in repo-metadata.yaml silently defaulted to "internal".
+
+**Fix:** v1.5.5 displays a warning when repo-metadata.yaml contains YAML parsing errors.
 
 ---
 
-## Low Severity Bugs
+### Bug #7: [FIXED in v1.5.5] Empty repo-metadata.yaml not distinguished from missing file
 
-### Bug #6: Invalid YAML in repo-metadata.yaml silently defaults to internal (v1.3.0)
-
-**Severity:** Low
-
-**Version Affected:** 1.3.0
+**Status:** FIXED
 
 **Description:**
-When `repo-metadata.yaml` contains invalid YAML, tier validation silently defaults to "internal" without warning.
+Empty and missing metadata files showed the same source.
 
-**Steps to Reproduce:**
-1. Create `repo-metadata.yaml` with invalid YAML:
-   ```yaml
-   tier: production
-     bad: yaml: here
-   ```
-2. Run `cm validate tier`
-
-**Expected Result:**
-- Warning about YAML parse error
-- Clear indication that default tier is being used due to error
-
-**Actual Result:**
-- Silently defaults to "internal"
-- User may not realize their metadata file is broken
+**Fix:** v1.5.5 distinguishes between missing, empty, and invalid repo-metadata files.
 
 ---
 
-### Bug #7: Empty repo-metadata.yaml not distinguished from missing file (v1.3.0)
+### Bug #8: [FIXED in v1.5.5] No validation that rulesets array isn't empty
 
-**Severity:** Low
-
-**Version Affected:** 1.3.0
+**Status:** FIXED
 
 **Description:**
-An empty `repo-metadata.yaml` file and a missing file both result in "default" tier source, making debugging difficult.
+Empty rulesets with configured extends passed silently.
 
-**Steps to Reproduce:**
-1. Create empty `repo-metadata.yaml` file (0 bytes)
-2. Run `cm validate tier`
-
-**Expected Result:**
-- Different tier source message (e.g., "empty" vs "missing")
-
-**Actual Result:**
-- Both show `(source: default)`
+**Fix:** v1.5.5 issues a warning when extends.registry is configured but rulesets remain empty.
 
 ---
 
-### Bug #8: No validation that rulesets array isn't empty when extends is configured (v1.3.0)
+### Bug #9: [FIXED in v1.5.5] tier validation error message doesn't suggest valid values
 
-**Severity:** Low
-
-**Version Affected:** 1.3.0
+**Status:** FIXED
 
 **Description:**
-When `[extends]` is configured but `rulesets = []`, the tier validation passes but the extends feature serves no purpose.
+Invalid tier values didn't show what valid options were available.
 
-**Steps to Reproduce:**
-1. Create `check.toml`:
-   ```toml
-   [extends]
-   registry = "github:example/standards"
-   rulesets = []
-   ```
-2. Create `repo-metadata.yaml` with any tier
-3. Run `cm validate tier`
-
-**Expected Result:**
-- Warning that empty rulesets means no standards are being applied
-
-**Actual Result:**
-- Passes silently
-
----
-
-### Bug #9: tier validation error message doesn't suggest valid values (v1.3.0)
-
-**Severity:** Low
-
-**Version Affected:** 1.3.0
-
-**Description:**
-When an invalid tier value is used, the error message doesn't indicate what valid values are.
-
-**Steps to Reproduce:**
-1. Create `repo-metadata.yaml`:
-   ```yaml
-   tier: staging
-   ```
-2. Run `cm validate tier`
-
-**Expected Result:**
-- Error message: "Invalid tier 'staging'. Valid values are: production, internal, prototype"
-
-**Actual Result:**
-- Silently defaults to "internal" without any indication of valid values
+**Fix:** v1.5.5 displays valid tier options when invalid tier values are encountered.
 
 ---
 
@@ -299,31 +253,25 @@ When an invalid tier value is used, the error message doesn't indicate what vali
 
 **Severity:** Low
 
-**Version Affected:** 1.4.0
+**Version Affected:** 1.4.0 - 1.6.0
+
+**Status:** Still present (related to Bug #16)
 
 **Description:**
-The `cm process audit` command doesn't verify that forbidden_files patterns are valid glob patterns before running checks.
-
-**Impact:** Invalid patterns are only caught at check runtime, not during audit.
+The `cm process audit` command doesn't verify that forbidden_files patterns are valid glob patterns.
 
 ---
 
-## Edge Case Issues
+### Bug #11: forbidden_files patterns with special glob characters may not work as expected
 
-### Bug #11: forbidden_files patterns with special glob characters may not work as expected (v1.4.0)
+**Severity:** Low
 
-**Severity:** Low (cannot fully test due to Bug #1)
+**Version Affected:** 1.4.0 - 1.6.0
 
-**Version Affected:** 1.4.0
+**Status:** Still present
 
 **Description:**
-Patterns containing special characters like `[`, `]`, `{`, `}` may not match files correctly due to glob interpretation.
-
-**Example:**
-- Pattern: `"file[1].txt"`
-- May match `file1.txt` instead of literal `file[1].txt`
-
-**Note:** Cannot fully verify due to Bug #1 (forbidden_files not working).
+Patterns containing special characters like `[`, `]`, `{`, `}` may not match files correctly.
 
 ---
 
@@ -331,10 +279,9 @@ Patterns containing special characters like `[`, `]`, `{`, `}` may not match fil
 
 **Severity:** Low
 
-**Version Affected:** 1.3.0
+**Version Affected:** 1.3.0 - 1.6.0
 
-**Description:**
-The JSON output from `cm validate tier --format json` doesn't include the full diagnostic path for debugging (e.g., paths searched for config/metadata files).
+**Status:** Still present
 
 ---
 
@@ -342,50 +289,42 @@ The JSON output from `cm validate tier --format json` doesn't include the full d
 
 **Severity:** Low
 
-**Version Affected:** 1.3.0
+**Version Affected:** 1.3.0 - 1.6.0
 
-**Description:**
-The `cm validate tier` command always passes if `[extends]` is not configured, even if `repo-metadata.yaml` has an invalid tier value.
-
-**Steps to Reproduce:**
-1. Create `check.toml` without extends:
-   ```toml
-   [code.linting.eslint]
-   enabled = true
-   ```
-2. Create `repo-metadata.yaml`:
-   ```yaml
-   tier: invalid-value
-   ```
-3. Run `cm validate tier`
-
-**Expected Result:**
-- Warning about invalid tier in metadata
-
-**Actual Result:**
-- Passes because "No extends configured (no tier constraint)"
+**Status:** Still present
 
 ---
 
 ## Summary
 
-| Bug # | Severity | Feature | Description |
-|-------|----------|---------|-------------|
-| 1 | Critical | forbidden_files | Feature completely broken - config not merged |
-| 2 | Medium | validate tier | Case-sensitive tier values not documented |
-| 3 | Medium | validate tier | Whitespace not trimmed from tier values |
-| 4 | Medium | validate tier | Custom config path breaks metadata resolution |
-| 5 | Medium | validate tier | Case-sensitive ruleset matching without warning |
-| 6 | Low | validate tier | Invalid YAML silently defaults |
-| 7 | Low | validate tier | Empty vs missing metadata not distinguished |
-| 8 | Low | validate tier | Empty rulesets array not warned |
-| 9 | Low | validate tier | Error messages don't suggest valid values |
-| 10 | Low | forbidden_files | No audit command for pattern validation |
-| 11 | Low | forbidden_files | Special glob characters may behave unexpectedly |
-| 12 | Low | validate tier | JSON output missing diagnostic info |
-| 13 | Low | validate tier | Invalid tier not validated without extends |
+### All Bugs by Status
 
-**Total Bugs Found:** 13
-- Critical: 1
-- Medium: 4
-- Low: 8
+| Bug # | Severity | Status | Feature | Description |
+|-------|----------|--------|---------|-------------|
+| 1 | Critical | FIXED (v1.5.4) | forbidden_files | Config not merged |
+| 2 | Medium | Open | validate tier | Case-sensitive tier values |
+| 3 | Medium | Open | validate tier | Whitespace not trimmed |
+| 4 | Medium | FIXED (v1.5.5) | validate tier | Custom config path issue |
+| 5 | Medium | Open | validate tier | Case-sensitive ruleset matching |
+| 6 | Low | FIXED (v1.5.5) | validate tier | Invalid YAML silently defaults |
+| 7 | Low | FIXED (v1.5.5) | validate tier | Empty vs missing not distinguished |
+| 8 | Low | FIXED (v1.5.5) | validate tier | Empty rulesets not warned |
+| 9 | Low | FIXED (v1.5.5) | validate tier | No valid values shown |
+| 10 | Low | Open | forbidden_files | No audit for pattern validation |
+| 11 | Low | Open | forbidden_files | Special glob chars may fail |
+| 12 | Low | Open | validate tier | JSON output missing diagnostics |
+| 13 | Low | Open | validate tier | Invalid tier passes without extends |
+| 14 | Medium | NEW | forbidden_files | Custom ignore dirs not working |
+| 15 | Low | NEW | forbidden_files | Empty ignore doesn't override defaults |
+| 16 | Low | NEW | forbidden_files | Invalid glob patterns not validated |
+
+### Totals
+
+**Total Bugs:** 16
+- Fixed: 6
+- Open: 10
+
+**By Severity:**
+- Critical: 0 open (1 fixed)
+- Medium: 4 open (1 fixed)
+- Low: 6 open (4 fixed)
