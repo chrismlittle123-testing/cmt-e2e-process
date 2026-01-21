@@ -1,0 +1,110 @@
+check-my-toolkit v2.0.0 E2E Test Results
+========================================
+Date: 2026-01-21
+Version: 2.0.0
+
+## New Features Tested (v1.7.0 - v2.0.0)
+
+### 1. process.commits - Commit Message Validation ✓
+- pattern: Working
+- types: Working
+- require_scope: Working
+- max_subject_length: Working
+- check-commit command: Working
+
+### 2. process.changesets - Changeset Validation ✓
+- require_for_paths: Working
+- exclude_paths: Working
+- validate_format: Working
+- allowed_bump_types: Working (validates enum values)
+- require_description: Working
+- min_description_length: Working
+
+### 3. process.codeowners - CODEOWNERS Rules ✓
+- rules array with pattern/owners: Working
+- Missing owners validation: Working
+- Empty rules validation: NOT working (Bug #30)
+
+### 4. process.docs - Documentation Checks ✓
+- path: Working
+- enforcement (block/warn): Working
+- max_files, max_file_lines, max_total_kb: Working
+- staleness_days: Working
+- stale_mappings: Working
+- min_coverage: Working
+- coverage_paths: Working
+- exclude_patterns: Working
+- types with required_sections/frontmatter: Working
+
+### 5. code.coverage_run - Coverage Runner ✓
+- min_threshold: Working (config validation)
+- runner (vitest/jest/pytest/auto): Working
+- command: Working
+- Invalid runner validation: Working
+
+### 6. process.hooks Updates ✓
+- commands: Working
+- protected_branches: Working
+
+### 7. process.repo.ruleset Updates ✓
+- name: Working
+- enforcement (active/evaluate/disabled): Working
+- bypass_actors: Working
+- Invalid enforcement validation: Working
+- Invalid bypass_mode validation: Working
+
+### 8. process.pr.exclude ✓ (Bug #19 FIXED)
+- exclude patterns: Now working
+
+### 9. process.branches Updates
+- require_issue: NOT working correctly (Bug #28)
+- issue_pattern: NOT working correctly (Bug #28)
+- Error messages: Show hardcoded examples (Bug #29)
+
+### 10. process.scan Command ✓
+- Available and help displays correctly
+
+### 11. diff-tags/sync-tags Commands ✓
+- Available for tag protection management
+
+## Bug Status Changes
+
+### Fixed in v2.0.0:
+- Bug #17: Ticket in commit body now detected
+- Bug #19: PR exclude option now supported
+
+### Still Open:
+- Bug #14: Custom ignore directories not working (forbidden_files)
+- Bug #18: min_threshold from check.toml still ignored (coverage)
+- Bug #22: Empty tag patterns array not validated
+- Bug #25: Empty CODEOWNERS file not validated
+
+### New Bugs Found:
+- Bug #28: process.branches require_issue pattern not matching correctly
+- Bug #29: require_issue error message shows hardcoded examples
+- Bug #30: Empty codeowners rules array not validated
+
+## Summary
+
+New Features Working: 9/11 (82%)
+  - Commits ✓
+  - Changesets ✓
+  - Codeowners (partial - empty rules issue)
+  - Docs ✓
+  - Coverage Run ✓
+  - Hooks Updates ✓
+  - Ruleset Updates ✓
+  - PR Exclude ✓
+  - Branches (NOT working - require_issue broken)
+  - Scan ✓
+  - Tags Commands ✓
+
+Bugs Fixed: 2
+Bugs Still Open: 16
+New Bugs Found: 3
+
+Overall: v2.0.0 adds many useful features that are working correctly.
+The main issues are:
+1. require_issue in branches is completely broken
+2. Coverage threshold enforcement still doesn't work
+3. Several "empty array" validation issues remain

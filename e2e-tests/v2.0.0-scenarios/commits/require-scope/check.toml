@@ -1,0 +1,4 @@
+[process.commits]
+enabled = true
+types = ["feat", "fix"]
+require_scope = true

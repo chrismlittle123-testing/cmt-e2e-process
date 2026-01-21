@@ -1,0 +1,3 @@
+[process.commits]
+enabled = true
+types = ["feat", "fix", "docs"]

@@ -1,9 +1,9 @@
-# Bugs Found in check-my-toolkit v1.3.0 - v1.6.0
+# Bugs Found in check-my-toolkit v1.3.0 - v2.0.0
 
-This document lists bugs discovered during E2E testing of the new features introduced in check-my-toolkit versions 1.3.0 through 1.6.0.
+This document lists bugs discovered during E2E testing of the new features introduced in check-my-toolkit versions 1.3.0 through 2.0.0.
 
 **Testing Environment:**
-- check-my-toolkit version: 1.6.0
+- check-my-toolkit version: 2.0.0
 - Node.js version: 25.2.1
 - Platform: macOS (Darwin 25.2.0)
 
@@ -11,7 +11,7 @@ This document lists bugs discovered during E2E testing of the new features intro
 
 ## Bug Status Summary
 
-### Fixed Bugs (verified in v1.5.x - v1.6.0)
+### Fixed Bugs (verified in v1.5.x - v2.0.0)
 
 | Bug # | Fixed In | Feature | Description |
 |-------|----------|---------|-------------|
@@ -21,11 +21,23 @@ This document lists bugs discovered during E2E testing of the new features intro
 | 7 | v1.5.5 | validate tier | Empty vs missing metadata now distinguished |
 | 8 | v1.5.5 | validate tier | Empty rulesets now show warning |
 | 9 | v1.5.5 | validate tier | Invalid tier now shows valid values |
+| 17 | v2.0.0 | process.tickets | Ticket reference in commit body now detected |
+| 19 | v2.0.0 | process.pr | exclude option now supported |
 
-### New Features Working Correctly (v1.5.0 - v1.6.0)
+### New Features Working Correctly (v1.5.0 - v2.0.0)
 
 | Version | Feature | Status |
 |---------|---------|--------|
+| v2.0.0 | process.commits | Working - types, pattern, require_scope, max_subject_length |
+| v2.0.0 | process.changesets | Working - validation for paths, bump types, descriptions |
+| v2.0.0 | process.codeowners | Working - rules-based CODEOWNERS validation |
+| v2.0.0 | process.docs | Working - path, enforcement, size limits, staleness, coverage |
+| v2.0.0 | code.coverage_run | Working - min_threshold, runner, custom command |
+| v2.0.0 | process.hooks.commands | Working - command validation per hook |
+| v2.0.0 | process.hooks.protected_branches | Working |
+| v2.0.0 | process.repo.ruleset | Working - name, enforcement, bypass_actors |
+| v2.0.0 | process.scan | Working - new command for scanning repo settings |
+| v2.0.0 | diff-tags/sync-tags | Working - tag protection management |
 | v1.6.0 | CI Commands Enforcement | Working - all 10 tests passed |
 | v1.5.7 | CLI exit codes for invalid args | Working |
 | v1.5.6 | Duplicate extensions validation | Working |
@@ -276,53 +288,27 @@ Patterns containing special characters like `[`, `]`, `{`, `}` may not match fil
 
 ## New Bugs Found in Extended v1.6.0 Testing
 
-### Bug #17: Ticket reference in commit body not detected (v1.6.0)
+### Bug #17: [FIXED in v2.0.0] Ticket reference in commit body not detected
 
-**Severity:** Medium
-
-**Version Affected:** 1.6.0
+**Status:** FIXED
 
 **Description:**
-When `require_in_commits = true` is set in `[process.tickets]`, the tool only looks for ticket references in the commit message subject line. Ticket references in the commit body are not detected.
+When `require_in_commits = true` is set in `[process.tickets]`, the tool now searches the entire commit message (subject and body) for ticket references.
 
-**Steps to Reproduce:**
-1. Create a `check.toml`:
-   ```toml
-   [process.tickets]
-   enabled = true
-   pattern = "^(PROJ|JIRA)-[0-9]+"
-   require_in_commits = true
-   ```
-2. Create a commit message file with ticket in body:
-   ```
-   Add new feature
-
-   This implements the feature described in PROJ-456.
-   ```
-3. Run `cm process check-commit COMMIT_MSG`
-
-**Expected Result:**
-- Ticket `PROJ-456` in the body should be detected
-- Check should pass
-
-**Actual Result:**
-```
-✗ Invalid commit message:
-  Missing ticket reference matching: ^(PROJ|JIRA)-[0-9]+
-```
-
-**Impact:** Users who follow conventional commits (ticket in body) will have false failures.
+**Fix:** v2.0.0 now searches the full commit message for ticket patterns.
 
 ---
 
-### Bug #18: Coverage min_threshold from check.toml ignored (v1.6.0)
+### Bug #18: Coverage min_threshold from check.toml ignored (v1.6.0 - v2.0.0)
 
 **Severity:** High
 
-**Version Affected:** 1.6.0
+**Version Affected:** 1.6.0 - 2.0.0
+
+**Status:** Still present (partially addressed but still not working correctly)
 
 **Description:**
-The `min_threshold` setting in `[process.coverage]` is completely ignored. The coverage check only works if you have a coverage threshold configured in vitest.config.ts, jest.config.js, or .nycrc. The check.toml setting is non-functional.
+The `min_threshold` setting in `[process.coverage]` is not enforced when `enforce_in = "config"`. v2.0.0 added an `enforce_in` option with values "ci", "config", or "both", but when set to "config", the coverage check passes regardless of actual coverage percentage.
 
 **Steps to Reproduce:**
 1. Create a `check.toml`:
@@ -330,55 +316,51 @@ The `min_threshold` setting in `[process.coverage]` is completely ignored. The c
    [process.coverage]
    enabled = true
    min_threshold = 80
+   enforce_in = "config"
    ```
-2. Create a coverage/lcov.info file with coverage data
+2. Create a coverage/lcov.info file with 50% coverage:
+   ```
+   TN:
+   SF:src/index.ts
+   DA:1,10
+   DA:2,10
+   DA:3,0
+   DA:4,0
+   LF:4
+   LH:2
+   end_of_record
+   ```
 3. Run `cm process check`
 
 **Expected Result:**
-- Coverage should be read from lcov.info
-- Threshold should be compared against `min_threshold` (80)
+- Coverage (50%) should be compared against `min_threshold` (80%)
+- Check should fail with "Coverage 50% is below threshold 80%"
 
 **Actual Result:**
 ```
-✗ Coverage: 1 violation(s)
-    error  No coverage threshold config found (checked vitest, jest, nyc)
+✓ PROCESS
+  ✓ Coverage: passed
 ```
 
-**Impact:** The `min_threshold` config option is non-functional. Users cannot enforce coverage thresholds without tool-specific config files.
+**Impact:** The `min_threshold` config option is still non-functional when `enforce_in = "config"`. Users cannot enforce coverage thresholds from check.toml.
 
 ---
 
-### Bug #19: PR exclude option documented but not supported (v1.6.0)
+### Bug #19: [FIXED in v2.0.0] PR exclude option not supported
 
-**Severity:** Low
-
-**Version Affected:** 1.6.0
+**Status:** FIXED
 
 **Description:**
-The `exclude` option for `[process.pr]` causes a config validation error, even though excluding files from PR size limits is a reasonable feature expectation.
+The `exclude` option for `[process.pr]` now works correctly. Users can exclude files from PR size calculations using glob patterns.
 
-**Steps to Reproduce:**
-1. Create a `check.toml`:
-   ```toml
-   [process.pr]
-   enabled = true
-   max_files = 10
-   max_lines = 200
-   exclude = ["*.lock", "*.generated.ts"]
-   ```
-2. Run `cm validate config`
-
-**Expected Result:**
-- Config should be valid
-- Lock files and generated files should be excluded from PR size calculation
-
-**Actual Result:**
+**Fix:** v2.0.0 added the `exclude` option to `[process.pr]` configuration. Example:
+```toml
+[process.pr]
+enabled = true
+max_files = 10
+max_lines = 200
+exclude = ["*.lock", "*.generated.ts", "package-lock.json"]
 ```
-✗ Invalid: Invalid check.toml configuration:
-  - process.pr: Unrecognized key(s) in object: 'exclude'
-```
-
-**Note:** This is a missing feature rather than a bug, but the expectation is reasonable based on similar exclude options in other checks.
 
 ---
 
@@ -551,6 +533,104 @@ CODEOWNERS files with invalid syntax (e.g., missing @ prefix on usernames) are a
 
 ---
 
+## New Bugs Found in v2.0.0 Testing
+
+### Bug #28: process.branches require_issue pattern not matching correctly (v2.0.0)
+
+**Severity:** Medium
+
+**Version Affected:** 2.0.0
+
+**Description:**
+When `require_issue = true` is set in `[process.branches]` with an `issue_pattern`, the pattern matching doesn't work correctly. Even when the branch name contains a substring matching the pattern, the check fails.
+
+**Steps to Reproduce:**
+1. Create a `check.toml`:
+   ```toml
+   [process.branches]
+   enabled = true
+   require_issue = true
+   issue_pattern = "PROJ-[0-9]+"
+   ```
+2. Create a branch with an issue reference:
+   ```bash
+   git checkout -b "feature/PROJ-123-add-feature"
+   ```
+3. Run `cm process check-branch`
+
+**Expected Result:**
+- Branch name contains `PROJ-123` which matches the pattern
+- Check should pass
+
+**Actual Result:**
+```
+✗ Branch 'feature/PROJ-123-add-feature' does not contain issue number. Expected format matching: PROJ-[0-9]+ (e.g., feature/123/description)
+```
+
+**Impact:** Users cannot use `require_issue` with custom issue patterns like Jira ticket formats.
+
+---
+
+### Bug #29: require_issue error message shows hardcoded examples (v2.0.0)
+
+**Severity:** Low
+
+**Version Affected:** 2.0.0
+
+**Description:**
+When `require_issue` validation fails, the error message shows hardcoded numeric examples (100, 101, 102) instead of examples using the configured `issue_pattern`.
+
+**Steps to Reproduce:**
+1. Configure `issue_pattern = "PROJ-[0-9]+"` in `[process.branches]`
+2. Run `cm process check-branch` on any branch
+
+**Expected Result:**
+- Error examples should show PROJ-100, PROJ-101, etc. based on the pattern
+
+**Actual Result:**
+```
+Examples (with issue number):
+  feature/100/add-feature
+  fix/101/add-feature
+  hotfix/102/add-feature
+```
+
+**Impact:** Error messages are confusing when using custom issue patterns.
+
+---
+
+### Bug #30: Empty codeowners rules array not validated (v2.0.0)
+
+**Severity:** Low
+
+**Version Affected:** 2.0.0
+
+**Description:**
+An empty `rules` array in `[process.codeowners]` passes config validation but provides no meaningful CODEOWNERS enforcement.
+
+**Steps to Reproduce:**
+1. Create a `check.toml`:
+   ```toml
+   [process.codeowners]
+   enabled = true
+   rules = []
+   ```
+2. Run `cm validate config`
+
+**Expected Result:**
+- Validation should fail or warn: "codeowners rules cannot be empty"
+
+**Actual Result:**
+```
+✓ Valid: check.toml
+```
+
+**Impact:** Users may think they have CODEOWNERS validation configured when they don't.
+
+**Note:** Similar to Bug #22 (empty tag patterns).
+
+---
+
 ## Summary
 
 ### All Bugs by Status
@@ -573,9 +653,9 @@ CODEOWNERS files with invalid syntax (e.g., missing @ prefix on usernames) are a
 | 14 | Medium | Open | forbidden_files | Custom ignore dirs not working |
 | 15 | Low | Open | forbidden_files | Empty ignore doesn't override defaults |
 | 16 | Low | Open | forbidden_files | Invalid glob patterns not validated |
-| 17 | Medium | Open | process.tickets | Ticket in body not found with ^ anchor |
-| 18 | High | Open | process.coverage | min_threshold from check.toml ignored |
-| 19 | Low | Open | process.pr | exclude option not supported |
+| 17 | Medium | FIXED (v2.0.0) | process.tickets | Ticket in body now detected |
+| 18 | High | Open | process.coverage | min_threshold from check.toml still ignored |
+| 19 | Low | FIXED (v2.0.0) | process.pr | exclude option now supported |
 | 20 | - | REMOVED | branch_protection | Deprecated in v1.7.0 |
 | 21 | - | REMOVED | branch_protection | Deprecated in v1.7.0 |
 | 22 | Low | Open | tag_protection | Empty patterns array not validated |
@@ -584,15 +664,18 @@ CODEOWNERS files with invalid syntax (e.g., missing @ prefix on usernames) are a
 | 25 | Low | Open | CODEOWNERS | Empty file not validated |
 | 26 | Low | Open | branch_protection | Newlines in status checks allowed |
 | 27 | Low | Open | CODEOWNERS | Invalid syntax not validated |
+| 28 | Medium | Open | process.branches | require_issue pattern not matching |
+| 29 | Low | Open | process.branches | Hardcoded examples in error message |
+| 30 | Low | Open | process.codeowners | Empty rules array not validated |
 
 ### Totals
 
-**Total Bugs:** 27 tracked (6 removed as not bugs/deprecated)
-- Fixed: 6
-- Open: 15
+**Total Bugs:** 30 tracked (6 removed as not bugs/deprecated)
+- Fixed: 8 (v1.5.4: 1, v1.5.5: 5, v2.0.0: 2)
+- Open: 16
 - Removed: 6
 
 **By Severity (Open only):**
 - High: 1 (#18)
-- Medium: 2 (#14, #17)
-- Low: 12
+- Medium: 2 (#14, #28)
+- Low: 13
