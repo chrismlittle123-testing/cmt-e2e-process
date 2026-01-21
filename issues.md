@@ -403,6 +403,256 @@ The `exclude` option for `[process.pr]` causes a config validation error, even t
 
 ---
 
+## New Bugs Found in Branch Protection & Rulesets Testing (v1.6.0)
+
+### Bug #20: required_reviews > 6 not validated (v1.6.0)
+
+**Severity:** Medium
+
+**Version Affected:** 1.6.0
+
+**Description:**
+The `required_reviews` setting in `[process.repo.branch_protection]` accepts values greater than 6, but GitHub's API has a maximum of 6 required reviewers. Invalid values pass config validation and will fail at runtime when trying to apply to GitHub.
+
+**Steps to Reproduce:**
+1. Create a `check.toml`:
+   ```toml
+   [process.repo]
+   enabled = true
+   require_branch_protection = true
+
+   [process.repo.branch_protection]
+   branch = "main"
+   required_reviews = 10
+   ```
+2. Run `cm validate config`
+
+**Expected Result:**
+- Validation should fail with error: "required_reviews must be between 0 and 6"
+
+**Actual Result:**
+```
+✓ Valid: check.toml
+```
+
+**Impact:** Users won't discover the invalid value until they try to sync to GitHub, where the API will reject it.
+
+---
+
+### Bug #21: Empty branch name not validated (v1.6.0)
+
+**Severity:** Medium
+
+**Version Affected:** 1.6.0
+
+**Description:**
+An empty string for `branch` in `[process.repo.branch_protection]` passes config validation but would fail at runtime.
+
+**Steps to Reproduce:**
+1. Create a `check.toml`:
+   ```toml
+   [process.repo]
+   enabled = true
+   require_branch_protection = true
+
+   [process.repo.branch_protection]
+   branch = ""
+   required_reviews = 1
+   ```
+2. Run `cm validate config`
+
+**Expected Result:**
+- Validation should fail with error: "branch cannot be empty"
+
+**Actual Result:**
+```
+✓ Valid: check.toml
+```
+
+---
+
+### Bug #22: Empty tag patterns array not validated (v1.6.0)
+
+**Severity:** Low
+
+**Version Affected:** 1.6.0
+
+**Description:**
+An empty `patterns` array in `[process.repo.tag_protection]` passes config validation but provides no meaningful protection.
+
+**Steps to Reproduce:**
+1. Create a `check.toml`:
+   ```toml
+   [process.repo]
+   enabled = true
+
+   [process.repo.tag_protection]
+   patterns = []
+   prevent_deletion = true
+   ```
+2. Run `cm validate config`
+
+**Expected Result:**
+- Validation should fail or warn: "tag_protection patterns cannot be empty"
+
+**Actual Result:**
+```
+✓ Valid: check.toml
+```
+
+**Impact:** Users may think they have tag protection configured when they actually don't.
+
+---
+
+### Bug #23: sync-diff command inherits parent git context (v1.6.0)
+
+**Severity:** Low
+
+**Version Affected:** 1.6.0
+
+**Description:**
+When running `cm process diff` in a directory that is not a git repo but is nested under a git repo, the command uses the parent repo's git context instead of failing gracefully.
+
+**Steps to Reproduce:**
+1. Create a subdirectory in a git repo without initializing git
+2. Create a check.toml in that directory
+3. Run `cm process diff`
+
+**Expected Result:**
+- Command should fail with "Not a git repository" error
+
+**Actual Result:**
+- Command uses the parent directory's git remote and attempts to diff against that repo
+
+---
+
+### Bug #24: CODEOWNERS check skipped when no GitHub remote (v1.6.0)
+
+**Severity:** Medium
+
+**Version Affected:** 1.6.0
+
+**Description:**
+When `require_codeowners = true` is set but the repository has no GitHub remote configured, the entire repo check is skipped instead of checking for the local CODEOWNERS file.
+
+**Steps to Reproduce:**
+1. Create a local git repo without a GitHub remote
+2. Create a `check.toml`:
+   ```toml
+   [process.repo]
+   enabled = true
+   require_codeowners = true
+   ```
+3. Do NOT create a CODEOWNERS file
+4. Run `cm process check`
+
+**Expected Result:**
+- Check should fail: "CODEOWNERS file required but not found"
+
+**Actual Result:**
+```
+✓ Repository: skipped - Could not determine GitHub repository from git remote
+✓ All checks passed
+```
+
+**Impact:** Teams working in repos without remotes (or with non-GitHub remotes) cannot use the CODEOWNERS check.
+
+---
+
+### Bug #25: Empty CODEOWNERS file not validated (v1.6.0)
+
+**Severity:** Low
+
+**Version Affected:** 1.6.0
+
+**Description:**
+When `require_codeowners = true` is set and a CODEOWNERS file exists but is empty, the check passes without warning.
+
+**Steps to Reproduce:**
+1. Create a `check.toml`:
+   ```toml
+   [process.repo]
+   enabled = true
+   require_codeowners = true
+   ```
+2. Create an empty `.github/CODEOWNERS` file
+3. Run `cm process check`
+
+**Expected Result:**
+- Check should fail or warn: "CODEOWNERS file is empty"
+
+**Actual Result:**
+- Check passes silently
+
+**Impact:** Users may think they have code review coverage when they don't.
+
+---
+
+### Bug #26: Newlines in status check names not validated (v1.6.0)
+
+**Severity:** Low
+
+**Version Affected:** 1.6.0
+
+**Description:**
+Status check names containing newlines or other control characters pass config validation, but would likely cause issues with the GitHub API.
+
+**Steps to Reproduce:**
+1. Create a `check.toml`:
+   ```toml
+   [process.repo]
+   enabled = true
+   require_branch_protection = true
+
+   [process.repo.branch_protection]
+   branch = "main"
+   require_status_checks = ["ci/test\ninjection", "build"]
+   ```
+2. Run `cm validate config`
+
+**Expected Result:**
+- Validation should fail: "status check names cannot contain newlines"
+
+**Actual Result:**
+```
+✓ Valid: check.toml
+```
+
+---
+
+### Bug #27: Invalid CODEOWNERS syntax not validated (v1.6.0)
+
+**Severity:** Low
+
+**Version Affected:** 1.6.0
+
+**Description:**
+CODEOWNERS files with invalid syntax (e.g., missing @ prefix on usernames) are accepted without warning.
+
+**Steps to Reproduce:**
+1. Create a `check.toml`:
+   ```toml
+   [process.repo]
+   enabled = true
+   require_codeowners = true
+   ```
+2. Create a CODEOWNERS file with invalid syntax:
+   ```
+   * team/reviewers
+   ```
+   (Should be `* @team/reviewers`)
+3. Run `cm process check`
+
+**Expected Result:**
+- Check should warn: "CODEOWNERS contains invalid syntax on line 1"
+
+**Actual Result:**
+- Check passes silently (when repo has GitHub remote) or skipped (when no remote)
+
+**Impact:** Users may have incorrectly formatted CODEOWNERS that GitHub ignores.
+
+---
+
 ## Summary
 
 ### All Bugs by Status
@@ -425,18 +675,26 @@ The `exclude` option for `[process.pr]` causes a config validation error, even t
 | 14 | Medium | Open | forbidden_files | Custom ignore dirs not working |
 | 15 | Low | Open | forbidden_files | Empty ignore doesn't override defaults |
 | 16 | Low | Open | forbidden_files | Invalid glob patterns not validated |
-| 17 | Medium | NEW | process.tickets | Ticket in commit body not detected |
-| 18 | High | NEW | process.coverage | min_threshold from check.toml ignored |
-| 19 | Low | NEW | process.pr | exclude option not supported |
+| 17 | Medium | Open | process.tickets | Ticket in commit body not detected |
+| 18 | High | Open | process.coverage | min_threshold from check.toml ignored |
+| 19 | Low | Open | process.pr | exclude option not supported |
+| 20 | Medium | NEW | branch_protection | required_reviews > 6 not validated |
+| 21 | Medium | NEW | branch_protection | Empty branch name not validated |
+| 22 | Low | NEW | tag_protection | Empty patterns array not validated |
+| 23 | Low | NEW | sync/diff | Inherits parent git context |
+| 24 | Medium | NEW | repo check | CODEOWNERS skipped when no remote |
+| 25 | Low | NEW | CODEOWNERS | Empty file not validated |
+| 26 | Low | NEW | branch_protection | Newlines in status checks allowed |
+| 27 | Low | NEW | CODEOWNERS | Invalid syntax not validated |
 
 ### Totals
 
-**Total Bugs:** 19
+**Total Bugs:** 27
 - Fixed: 6
-- Open: 13
+- Open: 21
 
 **By Severity:**
 - Critical: 0 open (1 fixed)
 - High: 1 open (0 fixed)
-- Medium: 5 open (1 fixed)
-- Low: 7 open (4 fixed)
+- Medium: 9 open (1 fixed)
+- Low: 11 open (4 fixed)
